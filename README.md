@@ -1,2 +1,2 @@
 # Bayes-OPT
-Bayesian optimization implementation
+Bayesian optimization implementation for chemistry experiments
