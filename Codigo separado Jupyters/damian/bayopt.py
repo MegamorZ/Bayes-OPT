@@ -123,7 +123,7 @@ class BayOptRBF:
 
         for _ in range(n_restarts):
             # elijo puntos al azar dentro de los limites
-            x0 = np.array([np.random.uniform(min, max) for min, max in self.X_bounds])
+            x0 = np.array([np.random.uniform(min, max) for min, max in bounds])
 
             # Busco maximos con minimize (acq_fun cambiadas de signo)
             res = minimize(fun, x0, args=params, method="L-BFGS-B", bounds=bounds)
