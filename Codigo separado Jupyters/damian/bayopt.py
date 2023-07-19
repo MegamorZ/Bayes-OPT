@@ -7,6 +7,7 @@ from scipy.stats import norm
 
 # Funciones de adquisicion.
 # Fuente: https://ekamperi.github.io/machine%20learning/2021/06/11/acquisition-functions.html
+# OBS> regresan el valor cambiado de signo para utilizar scipy.optimize.minize para buscar maximos.
 
 
 def EI(x, gp, y_max, epsilon=0):
@@ -29,7 +30,8 @@ def EI(x, gp, y_max, epsilon=0):
     a = mean - y_max - epsilon
     z = a / std
 
-    return a * norm.cdf(z) + std * norm.pdf(z)
+    result = a * norm.cdf(z) + std * norm.pdf(z)
+    return -result
 
 
 def PI(x, gp, y_max, epsilon=0):
@@ -52,7 +54,8 @@ def PI(x, gp, y_max, epsilon=0):
 
     z = mean - y_max - epsilon / std
 
-    return norm.cdf(z)
+    result = norm.cdf(z)
+    return -result
 
 
 def UCB(x, gp, kappa=1.96):
@@ -72,15 +75,18 @@ def UCB(x, gp, kappa=1.96):
 
     # calcular y devolver la probabilidad de mejora
 
-    return mean + kappa * std
+    result = mean + kappa * std
+    return -result
 
 
 class BayOptRBF:
     def __init__(self, X_train, y_train, alpha=0.1):
         # Guardo los datos de entrenamiento/ parametros
         self.X_train = X_train
+        self.n_dim = self.X_train.shape[1]
         self.y_train = y_train
         self.alpha = alpha  # varianza del ruido gaussiano adicionado a los datos
+        self.y_train_max = max(self.y_train)
 
         # Inicializo el kernel
         self.kernel = (
@@ -96,5 +102,36 @@ class BayOptRBF:
         )
         self.regressor.fit(self.X_train, self.y_train)
 
-    def global_max(self, acq_fun="EI", n_restarts=20):
-        pass
+    def global_max(self, bounds, acq_fun="EI", n_restarts=20):
+        ## bounds [(min,max), ...] min y max por cada variable
+
+        # seleccion de funcion de adquisicion y parametros para pasar al optimizador
+        if acq_fun == "EI":
+            fun = EI
+            params = (self.regressor, self.y_train_max)
+        if acq_fun == "PI":
+            fun = PI
+            params = (self.regressor, self.y_train_max)
+        if acq_fun == "UCB":
+            fun = UCB
+            params = self.regressor
+
+        # busco un maximo de la funcion de adquisicion iterativamente para
+        # distintos puntos iniciales elegidos al azar.
+        current_acq_fun_max = 0
+        optimal_X = None
+
+        for _ in range(n_restarts):
+            # elijo puntos al azar dentro de los limites
+            x0 = np.array([np.random.uniform(min, max) for min, max in self.X_bounds])
+
+            # Busco maximos con minimize (acq_fun cambiadas de signo)
+            res = minimize(fun, x0, args=params, method="L-BFGS-B", bounds=bounds)
+
+            if res.success:  # Si converge el optimizador
+                acq_fun_max = -res.fun[0]
+                if acq_fun_max > current_acq_fun_max:
+                    current_acq_fun_max = acq_fun_max
+                    optimal_X = res.x
+
+        return optimal_X, current_acq_fun_max
