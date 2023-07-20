@@ -135,3 +135,28 @@ class BayOptRBF:
                     optimal_X = res.x
 
         return optimal_X, current_acq_fun_max
+
+class RandomQuadratic:
+    #uso definicion matricial https://en.wikipedia.org/wiki/Quadratic_form
+    #definidas/semidefinidas negativas para encontrar maximos. 
+
+    def __init__(self, n_dim, scale_factor=1, offset=True):
+        self.n_dim = n_dim
+        self.scale_factor = scale_factor
+        self.offset = offset
+
+
+        #genero matriz asociada al polinomio al azar 
+        random_matrix = np.random.uniform(low=-1, high=0,size=(n_dim,n_dim))
+        self.associated_matrix = (random_matrix+random_matrix.T)/2
+        
+        #si offset=True -> cambio la pos del maximo
+        #si offset=False -> maximo en zero
+        if offset:
+            self.x0 = np.random.uniform(low=-1, high=1, size=(1, n_dim))
+
+    def __call__(self,x):
+        #X un punto representado por un matriz (1xN)
+        if self.offset:
+            x = x-self.x0
+        return float(np.dot(x, np.dot(self.associated_matrix, x.T)))
