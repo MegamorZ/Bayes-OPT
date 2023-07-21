@@ -91,7 +91,7 @@ class BayOptRBF:
 
         # Inicializo el kernel
         self.kernel = (
-            RBF()
+            RBF(length_scale=0.6)
         )  # ver necesidad de setear limites al hiper parametro lengthscale
 
         # Inicializo el regresor y ajusto a los datos.

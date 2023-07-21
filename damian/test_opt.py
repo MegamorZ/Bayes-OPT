@@ -9,22 +9,23 @@ if __name__ == '__main__':
     n_dim=2
     RS = RandomGaussian(n_dim=n_dim, offset=False)
 
-    x_data = np.random.uniform(low=-2, high=2, size=(10, n_dim))
+    #x_data = np.random.uniform(low=-2, high=2, size=(10, n_dim))
+    x_data = np.array([[0,0],[2,2],[2,-2],[-2,2],[-2,-2]])
+    #x_data = np.array([[0,0],[1,1],[1,-1],[-1,1],[-1,-1],[2,2],[2,-2],[-2,2],[-2,-2]])
     y_data = np.array([RS(x) for x in x_data])
     bounds = np.array([(-2,2),(-2,2)])
 
     model = BayOptRBF(x_data,y_data)
 
-    # print(x_data)
-    # print(y_data)
-    # print(model.kernel.hyperparameters)
-    print(model.global_max(acq_fun="EI",bounds=bounds))
-    #print(model.regressor.predict([[0,0]]))
+    print(x_data)
+    print(y_data)
+    print(model.regressor.kernel_.get_params())
 
+    # figura
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     # mesh
-    x = y = np.linspace(-2, 2, 30)
+    x = y = np.linspace(-3, 3, 20)
     X, Y = np.meshgrid(x, y)
     # convierto a coordenadas y calculo el valor en cada punto
     z = np.array([])
@@ -38,6 +39,5 @@ if __name__ == '__main__':
     ax.set_xlabel("X Label")
     ax.set_ylabel("Y Label")
     ax.set_zlabel("Z Label")
-    
 
     plt.show()
