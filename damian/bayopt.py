@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
@@ -160,3 +161,22 @@ class RandomQuadratic:
         if self.offset:
             x = x-self.x0
         return float(np.dot(x, np.dot(self.associated_matrix, x.T)))
+
+class RandomGaussian:
+    def __init__(self, n_dim, scale_factor=1.0, offset=True):
+        self.n_dim = n_dim
+        self.scale_factor = scale_factor
+        self.offset = offset
+        # G~EXP(-(x-x0)**2/2*c**2)
+        if offset:
+            self.x0 = np.random.uniform(low=-1, high=1, size=(n_dim))
+        self.c = np.random.uniform(low=0, high=1, size=(n_dim))    
+
+    def __call__(self,x):
+        #X un punto representado por un matriz (1xN) //[[x1,xi,xn]]
+        output = np.array([])
+        for xs, x0, c in zip(x,self.x0, self.c):
+            components = np.append(output, np.exp(-((xs-x0)**2)/(2*c**2)))
+            print(components)
+        return np.prod(components)*self.scale_factor
+
