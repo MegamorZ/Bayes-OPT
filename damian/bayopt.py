@@ -25,7 +25,7 @@ def EI(x, gp, y_max, epsilon=0):
     """
 
     # Calcular media y desvio para el valor de prueba "x"
-    mean, std = gp.predict(x, return_std=True)
+    mean, std = gp.predict([x], return_std=True)
 
     # calcular y devolver la expectativa de mejora
     a = mean - y_max - epsilon
@@ -49,7 +49,7 @@ def PI(x, gp, y_max, epsilon=0):
     """
 
     # Calcular media y desvio para el valor de prueba "x"
-    mean, std = gp.predict(x, return_std=True)
+    mean, std = gp.predict([x], return_std=True)
 
     # calcular y devolver la probabilidad de mejora
 
@@ -72,7 +72,7 @@ def UCB(x, gp, kappa=1.96):
     """
 
     # Calcular media y desvio para el valor de prueba "x"
-    mean, std = gp.predict(x, return_std=True)
+    mean, std = gp.predict([x], return_std=True)
 
     # calcular y devolver la probabilidad de mejora
 
@@ -81,7 +81,7 @@ def UCB(x, gp, kappa=1.96):
 
 
 class BayOptRBF:
-    def __init__(self, X_train, y_train, alpha=0.1):
+    def __init__(self, X_train, y_train, alpha=0.01):
         # Guardo los datos de entrenamiento/ parametros
         self.X_train = X_train
         self.n_dim = self.X_train.shape[1]
@@ -170,13 +170,15 @@ class RandomGaussian:
         # G~EXP(-(x-x0)**2/2*c**2)
         if offset:
             self.x0 = np.random.uniform(low=-1, high=1, size=(n_dim))
-        self.c = np.random.uniform(low=0, high=1, size=(n_dim))    
+        else:
+            self.x0 = np.zeros(shape=(n_dim))
+
+        self.c = np.random.uniform(low=0.2, high=1, size=(n_dim))    
 
     def __call__(self,x):
         #X un punto representado por un matriz (1xN) //[[x1,xi,xn]]
         output = np.array([])
         for xs, x0, c in zip(x,self.x0, self.c):
             components = np.append(output, np.exp(-((xs-x0)**2)/(2*c**2)))
-            print(components)
         return np.prod(components)*self.scale_factor
 
