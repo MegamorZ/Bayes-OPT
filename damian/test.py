@@ -1,32 +1,33 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 from bayopt import BayOptRBF, RandomQuadratic
 
-if __name__ == '__main__':
-    #generando una funcion cuadratica
+if __name__ == "__main__":
+    # generando una funcion cuadratica
     func = RandomQuadratic(n_dim=2)
-    #bounds
-    bounds=[(-2,2),(-2,2)]
+    # bounds
+    bounds = [(-2, 2), (-2, 2)]
 
-    #ploteando
-    densidad_meshgrid = 5 #puntos
-    x_mesh= np.linspace(-2,2,densidad_meshgrid)
-    y_mesh= np.linspace(-2,2,densidad_meshgrid)
-    X,Y = np.meshgrid(x_mesh,y_mesh, sparse=True)
+    # figura
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    # mesh
+    x = y = np.linspace(-3, 3, 20)
+    X, Y = np.meshgrid(x, y)
+    # convierto a coordenadas y calculo el valor en cada punto
+    z = np.array([])
+    for x0, y0 in zip(np.ravel(X), np.ravel(Y)):
+        print(x0, y0, func(np.array([[x0, y0]])))
+        z = np.append(z, func(np.array([[x0, y0]])))
+    # convierto los valores a forma de mesh y ploteo
+    Z = z.reshape(X.shape)
 
-    print(X,Y)
-    #Z lista de lista con los valores de la funcion en cada punto del grid
-    xs = X[0]
-    ys = Y.reshape(1,densidad_meshgrid)[0]
+    ax.plot_surface(X, Y, Z)
 
-    Z = np.array([[func(np.array([[x,y]])) for x in xs] for y in ys])
-    
-    #FIG SURFACE
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-
-    # Plot the surface.
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
-                        linewidth=0, antialiased=False)
+    ax.set_xlabel("X Label")
+    ax.set_ylabel("Y Label")
+    ax.set_zlabel("Z Label")
 
     plt.show()
