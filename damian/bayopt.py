@@ -206,6 +206,7 @@ class RandomQuadratic:
             )
 
     def __call__(self, x, normalize=True):
+        np.random.seed(42)
         # X un punto representado por un matriz (1xN)
         if self.offset:
             x = x - self.x0

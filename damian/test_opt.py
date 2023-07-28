@@ -1,6 +1,7 @@
 import numpy as np
 from bayopt import BayOptRBF, RandomQuadratic
 import warnings
+import itertools
 
 warnings.filterwarnings("ignore")
 
@@ -8,22 +9,26 @@ warnings.filterwarnings("ignore")
 if __name__ == "__main__":
     # vars
     n_dim = 2
-    bounds = np.array([(-1, 1), (-1, 1)])
+    _1d_bound = [-1, 1]
+
+    bounds = np.array([_1d_bound for _ in range(n_dim)])
 
     # data
-    x_data = np.array([[0, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]])
-
-    RS = RandomQuadratic(n_dim=n_dim, bounds=bounds, offset=True, noise=False)
+    x_data = np.array(list(itertools.product(_1d_bound, repeat=n_dim)))
+    x_data = np.append(x_data, np.zeros(shape=n_dim))
+    print(x_data)
+    RS = RandomQuadratic(n_dim=n_dim, bounds=bounds, offset=False, noise=0.05)
     y_data = np.array([RS(x) for x in x_data])
 
     # model
+    print(x_data, y_data)
     model = BayOptRBF(x_data, y_data)
 
     # optimizacion
     pct_max = []
     tested_values = []
     for iteration in range(10):
-        x_next, acq_func_val = model.global_max(acq_fun="EI", bounds=bounds)
+        x_next, acq_func_val = model.global_max(acq_fun="UCB", bounds=bounds)
         # valor de la funcion en el punto encontrado
         # como la funcion esta normalizada entre 0 y 1, tmb es la fraccion del maximo.
         y_next = RS(x_next)
