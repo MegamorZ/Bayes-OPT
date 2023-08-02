@@ -8,20 +8,21 @@ warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
     # vars
-    n_dim = 2
+    n_dim = 4
+
     _1d_bound = [-1, 1]
 
     bounds = np.array([_1d_bound for _ in range(n_dim)])
 
     # data
     x_data = np.array(list(itertools.product(_1d_bound, repeat=n_dim)))
-    x_data = np.append(x_data, np.zeros(shape=n_dim))
-    print(x_data)
-    RS = RandomQuadratic(n_dim=n_dim, bounds=bounds, offset=False, noise=0.05)
+    x_data = np.concatenate((x_data, np.zeros(shape=(1, n_dim))))
+
+    RS = RandomQuadratic(n_dim=n_dim, bounds=bounds, offset=True, noise=0.05)
     y_data = np.array([RS(x) for x in x_data])
 
     # model
-    print(x_data, y_data)
+    # print(x_data, y_data)
     model = BayOptRBF(x_data, y_data)
 
     # optimizacion
