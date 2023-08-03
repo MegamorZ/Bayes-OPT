@@ -2,6 +2,8 @@ import numpy as np
 from bayopt import BayOptRBF, RandomQuadratic, RandomGaussian, plot_3d, bounded_min
 
 if __name__ == "__main__":
+    # np.random.seed(42)
+
     # Inicializo los datos.
     n_dim = 2
     bounds = np.array([(-1, 1), (-1, 1)])

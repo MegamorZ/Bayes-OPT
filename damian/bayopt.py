@@ -1,8 +1,5 @@
-from typing import Any
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
 import itertools
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
@@ -206,7 +203,6 @@ class RandomQuadratic:
             )
 
     def __call__(self, x, normalize=True):
-        np.random.seed(42)
         # X un punto representado por un matriz (1xN)
         if self.offset:
             x = x - self.x0
@@ -217,10 +213,10 @@ class RandomQuadratic:
             y = (y - self.bounded_min) / (self.bounded_max - self.bounded_min)
 
         # Agregar ruido gaussiano
-        if not self.noise:
-            return y
-        else:
+        if self.noise:
             return y + np.random.normal(0, self.noise)
+        else:
+            return y
 
 
 class RandomGaussian:
