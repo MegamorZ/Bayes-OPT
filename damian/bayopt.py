@@ -273,3 +273,82 @@ def plot_3d(RS, regressor):
     ax[0].set_title("Ground Truth")
     ax[1].set_title("Aproximation")
     plt.show()
+
+
+class SimplexOpt:
+    """Metodo simplex explicado en:
+    M.A.Bezerra etal. / MicrochemicalJournal124 (2016) 45"""
+
+    def __init__(self, bounds, step=1):
+        self.bounds = bounds
+        self.step = step  # step
+        self.x0 = np.array(
+            [np.random.uniform(low=bound[0], high=bound[1]) for bound in self.bounds]
+        )  # starting point
+        self.n_dim = self.bounds.shape[0]  # dimension, debe ser menor a 10
+        self.SIV = np.array(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0.5, 0.87, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0.5, 0.29, 0.82, 0, 0, 0, 0, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.79, 0, 0, 0, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.78, 0, 0, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.13, 0.76, 0, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.13, 0.11, 0.76, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.13, 0.11, 0.094, 0.75, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.13, 0.11, 0.094, 0.083, 0.75, 0],
+            ]
+        )
+        self.current_vertex = self.initial_vertex()
+
+    def initial_vertex(self):
+        # Vertex inicial
+        x_origin = np.array(
+            [
+                self.x0,
+            ]
+            * ((self.n_dim) + 1)
+        )
+        vertex = x_origin + self.SIV[0 : (self.n_dim) + 1, 0 : self.n_dim] * self.step
+        return vertex
+
+    def simplex(self, x_vertex_data, y_vertex_data):
+        # devuelve el proximo punto a muestrear
+        # actualiza self.current_vertex con el nuevo vertex
+
+        index_of_min = np.argmin(y_vertex_data)
+
+        # W es el peor valor del vertex, M es el punto central del vertex excluido W.
+        W = x_vertex_data[index_of_min]
+        menos_W = np.delete(x_vertex_data, index_of_min, axis=0)
+        M = menos_W.mean(axis=0)
+        R = 2 * M - W
+
+        self.current_vertex = np.concatenate((menos_W, [R]))
+        return R
+
+    def Simplex_Mod(self, X_init, fun):
+        # X_init is dtatframe array X and Responses
+        X_init.sort_values(
+            X_init.columns[-1], ascending=False, inplace=True
+        )  # sort by response
+        M = X_init.iloc[0 : (self.n_dim), 0 : (self.n_dim)].mean(axis=0)
+        R = 2 * M - X_init.iloc[self.n_dim, 0 : (self.n_dim)]
+        E = 3 * M - 2 * X_init.iloc[self.n_dim, 0 : (self.n_dim)]
+        # conditions for expansion and contraction
+        alpha = 1
+        if fun(R) > X_init.iloc[0, -1]:
+            if fun(E) >= fun(R):
+                alpha = 2
+            else:
+                alpha = 1
+        elif fun(R) < X_init.iloc[1, -1] and fun(R) > X_init.iloc[2, -1]:
+            alpha = 0.5
+        elif fun(R) < X_init.iloc[2, -1]:
+            alpha = -0.5
+
+        R = (alpha + 1) * M - alpha * X_init.iloc[2, :-1]
+        R.at[self.n_dim] = fun(R)
+
+        return R  # return R with response
