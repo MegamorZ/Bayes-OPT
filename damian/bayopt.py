@@ -220,13 +220,13 @@ class RandomQuadratic:
 
 
 class RandomGaussian:
-    def __init__(self, n_dim, scale_factor=1.0, offset=True):
+    def __init__(self, n_dim, offset=True, noise=False):
         self.n_dim = n_dim
-        self.scale_factor = scale_factor
         self.offset = offset
+        self.noise = noise
         # G~EXP(-(x-x0)**2/2*c**2)
         if offset:
-            self.x0 = np.random.uniform(low=-1, high=1, size=(n_dim))
+            self.x0 = np.random.uniform(low=-0.5, high=0.5, size=(n_dim))
         else:
             self.x0 = np.zeros(shape=(n_dim))
 
@@ -237,7 +237,13 @@ class RandomGaussian:
         output = np.array([])
         for xs, x0, c in zip(x, self.x0, self.c):
             components = np.append(output, np.exp(-((xs - x0) ** 2) / (2 * c**2)))
-        return np.prod(components) * self.scale_factor
+        y = np.log(np.prod(components) + 1)
+
+        # Agregar ruido gaussiano
+        if self.noise:
+            return y + np.random.normal(0, self.noise)
+        else:
+            return y
 
 
 def plot_3d(RS, regressor):
