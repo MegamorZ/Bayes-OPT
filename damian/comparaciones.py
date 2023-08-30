@@ -9,13 +9,13 @@ warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
     # vars
-    n_dim = 2
+    n_dim = 6
 
     _1d_bound = [-1, 1]
 
     bounds = np.array([_1d_bound for _ in range(n_dim)])
 
-    N = 5  # numero de experimentos
+    N = 50  # numero de experimentos
 
     # listas para almacenar los resultados de las optimizaciones para cada superficie.
     data_bayopt = []
@@ -23,8 +23,7 @@ if __name__ == "__main__":
 
     for exp in range(N):
         # inicializo superficie
-        # RS = RandomQuadratic(n_dim=n_dim, bounds=bounds, offset=True, noise=0.01)
-        RS = RandomGaussian(n_dim=n_dim, offset=False, noise=0.01)
+        RS = RandomQuadratic(n_dim=n_dim, bounds=bounds, offset=True, noise=0.01)
 
         # datos iniciales para bayopt (centro + bordes)
         x_data_bayopt = np.array(list(itertools.product(_1d_bound, repeat=n_dim)))

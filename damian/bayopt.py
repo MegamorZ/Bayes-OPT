@@ -237,7 +237,7 @@ class RandomGaussian:
         output = np.array([])
         for xs, x0, c in zip(x, self.x0, self.c):
             components = np.append(output, np.exp(-((xs - x0) ** 2) / (2 * c**2)))
-        y = np.log(np.prod(components) + 1)
+        y = np.prod(components) + 1
 
         # Agregar ruido gaussiano
         if self.noise:
@@ -334,27 +334,116 @@ class SimplexOpt:
         self.current_vertex = np.concatenate((menos_W, [R]))
         return R
 
-    def Simplex_Mod(self, X_init, fun):
-        # X_init is dtatframe array X and Responses
-        X_init.sort_values(
-            X_init.columns[-1], ascending=False, inplace=True
-        )  # sort by response
-        M = X_init.iloc[0 : (self.n_dim), 0 : (self.n_dim)].mean(axis=0)
-        R = 2 * M - X_init.iloc[self.n_dim, 0 : (self.n_dim)]
-        E = 3 * M - 2 * X_init.iloc[self.n_dim, 0 : (self.n_dim)]
-        # conditions for expansion and contraction
-        alpha = 1
-        if fun(R) > X_init.iloc[0, -1]:
-            if fun(E) >= fun(R):
-                alpha = 2
-            else:
-                alpha = 1
-        elif fun(R) < X_init.iloc[1, -1] and fun(R) > X_init.iloc[2, -1]:
-            alpha = 0.5
-        elif fun(R) < X_init.iloc[2, -1]:
-            alpha = -0.5
 
-        R = (alpha + 1) * M - alpha * X_init.iloc[2, :-1]
-        R.at[self.n_dim] = fun(R)
+class SimplexModOpt:
+    """Metodo simplex modificado explicado en:
+    M.A.Bezerra etal. / MicrochemicalJournal124 (2016) 45"""
 
-        return R  # return R with response
+    def __init__(self, bounds, step=1):
+        self.bounds = bounds
+        self.step = step  # step
+        self.x0 = np.array(
+            [np.random.uniform(low=bound[0], high=bound[1]) for bound in self.bounds]
+        )  # starting point
+        self.n_dim = self.bounds.shape[0]  # dimension, debe ser menor a 10
+        self.SIV = np.array(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0.5, 0.87, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0.5, 0.29, 0.82, 0, 0, 0, 0, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.79, 0, 0, 0, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.78, 0, 0, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.13, 0.76, 0, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.13, 0.11, 0.76, 0, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.13, 0.11, 0.094, 0.75, 0, 0],
+                [0.5, 0.29, 0.2, 0.16, 0.13, 0.11, 0.094, 0.083, 0.75, 0],
+            ]
+        )
+        self.current_vertex = self.initial_vertex()
+
+        # Estado para modificar contraccion/expansion del vertex
+        self.last_vertex = None
+        self.last_response = None
+        self.last_point_added = None
+        self.last_point_added_type = None
+
+    def initial_vertex(self):
+        # Vertex inicial
+        x_origin = np.array(
+            [
+                self.x0,
+            ]
+            * ((self.n_dim) + 1)
+        )
+        vertex = x_origin + self.SIV[0 : (self.n_dim) + 1, 0 : self.n_dim] * self.step
+
+        return vertex
+
+    def simplex(self, x_vertex_data, y_vertex_data):
+        # devuelve el proximo punto a muestrear
+        # actualiza self.current_vertex con el nuevo vertex
+
+        index_of_min = np.argmin(y_vertex_data)
+
+        # W es el peor valor del vertex, B es el mejor valor del vertex, M es el punto central del vertex excluido W.
+        W = x_vertex_data[index_of_min]
+
+        menos_W = np.delete(x_vertex_data, index_of_min, axis=0)
+        M = menos_W.mean(axis=0)
+        # R refleccion, E refleccion expandida, CR refleccion contraida, CW cambio de direccion.
+        R = 2 * M - W
+
+        # en la primera iteracion devuelvo R
+        if not self.last_vertex:
+            # guardo el vertex inicial
+            self.last_vertex = self.x_vertex_data
+            self.last_response = self.y_vertex_data
+            self.last_point_added = R
+            self.last_point_added_type = "R"
+
+            self.current_vertex = np.concatenate((menos_W, [R]))
+            return R
+
+        # En la segunda iteracion, modifico el output segun la respuesta
+
+        # Si el ultimo punto agregado fue de tipo "R"
+        if self.last_point_added_type == "R":
+            # Caso 1: Señal en R fue mejor que señal en B del vertex anterior -> expansion
+            B_ = self.last_response.max()
+            R_ = self.y_vertex_data[
+                np.where(self.x_vertex == self.last_point_added)[0][0]
+            ]
+
+            if R_ > B_:
+                self.last_vertex = self.x_vertex_data
+                self.last_response = self.y_vertex_data
+                E = 3 * M - 2 * W
+                self.last_point_added = E
+                self.last_point_added_type = "E"
+
+                self.current_vertex = np.concatenate((menos_W, [E]))
+                return E
+            # Caso 2,   N < R < B --> mantengo  BNR simplex
+            N_ = self.last_response[np.argsort(self.last_response)[-2]]
+
+            if N_ < R_ < B_:
+                self.last_vertex = self.x_vertex_data
+                self.last_response = self.y_vertex_data
+                self.last_point_added = R
+                self.last_point_added_type = "R"
+
+                self.current_vertex = np.concatenate((menos_W, [R]))
+                return R
+
+            # Caso 3,  R < N --> contraccion
+            if R_ < N_:
+                self.last_vertex = self.x_vertex_data
+                self.last_response = self.y_vertex_data
+                CR = 1.5 * M - 0.5 * W
+                self.last_point_added = CR
+                self.last_point_added_type = "CR"
+
+                self.current_vertex = np.concatenate((menos_W, [CR]))
+                return CR
+            ##### Continuar mas adelante y pensar mejor mec de control.
