@@ -98,6 +98,26 @@ def bounded_min(Func, bounds, method="L-BFGS-B", n_restarts=10, *args):
     return Xmin, Fmin
 
 
+def bounded_max(Func, bounds, method="L-BFGS-B", n_restarts=10, *args):
+    def mfun(x):
+        return -Func(x)
+
+    Fmax = None
+    Xmax = None
+    ndim = bounds.shape[1]
+
+    for _ in range(n_restarts):
+        # Creo punto al azar dentro de los limites
+        X0 = np.array([np.random.uniform(low=b[0], high=b[1]) for b in bounds])
+        # Busco minimo
+        res = minimize(mfun, x0=X0, args=args, method=method, bounds=bounds)
+
+        if Fmax is None or res.fun > Fmax:
+            Xmax = res.x
+            Fmax = res.fun
+    return Xmax, Fmax
+
+
 class BayOptRBF:
     def __init__(self, X_train, y_train, alpha=0.1):
         # Guardo los datos de entrenamiento/ parametros

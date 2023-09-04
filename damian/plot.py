@@ -42,28 +42,23 @@ def plot_opt(num, mean, sd, legend, n_dim):
     plt.xlabel("Number of Measurements", fontsize=24)
     plt.ylabel("% of optimum value achieved", fontsize=24)
     plt.xlim(num.min(), num.max())
-    plt.ylim((mean - 2 * sd).min() - 0.05, 1)
+    plt.ylim((mean - 2 * sd).min() - 0.05, 1.001)
     plt.title(f"{n_dim} Factores", fontsize=24)
     plt.legend(loc="lower right", prop={"size": 20})
     plt.show()
 
 
-n_dim = 6
+n_dim = 3
+data = pd.read_csv(f"datos_resumidos_ndim{n_dim}")
+data_ccd = pd.read_csv(f"datos_ccd_ndim{n_dim}")
 
-data = pd.read_csv(f"datos_ndim{n_dim}")
-data = data.rename(columns={"Unnamed: 0": "N"})
-
-
-# corrijo valores ligeramente por sobre 1 debido al ruido.add()
-data.bayopt_mean = data.bayopt_mean / data.bayopt_mean.max()
-
-# convertir el numero de iteracion N en el numero de puntos usados.
-bayopt_N = data.N + (1 + 2**n_dim)
-simplex_N = data.N + (1 + n_dim)
+print(data_ccd.ccd_best.mean())
+# ver como corrijo valores ligeramente por sobre 1 debido al ruido.add()
+data.bayopt_mean[data.bayopt_mean > 1] = 1
 
 #
 plot_opt(
-    bayopt_N,
+    data.num,
     data.bayopt_mean,
     data.bayopt_sd,
     legend="Mean Bayesian Optimization",
@@ -71,7 +66,7 @@ plot_opt(
 )
 
 plot_opt(
-    simplex_N,
+    data.num,
     data.simplex_mean,
     data.simplex_sd,
     legend="Mean Simplex Optimization",
