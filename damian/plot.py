@@ -73,6 +73,11 @@ if n_dim < 5:
     data_violin.bayopt_best_ucb = (
         data_violin.bayopt_best_ucb + 1 - data_violin.bayopt_best_ucb.mean()
     )
+data_violin.bayopt_best_ei[data_violin.bayopt_best_ei > 1] = 1
+data_violin.bayopt_best_pi[data_violin.bayopt_best_pi > 1] = 1
+data_violin.bayopt_best_ucb[data_violin.bayopt_best_ucb > 1] = 1
+data_violin.simplex_best[data_violin.simplex_best > 1] = 1
+data_violin.ccd_best[data_violin.ccd_best > 1] = 1
 
 
 ##creo subplots
@@ -122,7 +127,7 @@ axes[0].fill_between(
 )
 # limites
 axes[0].set_xlim(data.num.min(), data.num.max())
-axes[0].set_ylim((data.bayopt_mean_ei - 2 * data.bayopt_sd_ei).min() - 0.05, 1.005)
+axes[0].set_ylim((data.bayopt_mean_ei - 2 * data.bayopt_sd_ei).min() - 0.05, 1.002)
 axes[0].legend(loc="lower right", prop={"size": 9})
 axes[0].set_ylabel("Fraccion del maximo")
 axes[0].set_xlabel("Mediciones")
@@ -193,13 +198,16 @@ v_plot = axes[2].violinplot(
 )
 # cambio los colores de los violines
 colors = ["#5F0F40", "#9A031E", "#FB8B24", "#E36414", "#2A2E45"]
+
 for pc, color in zip(v_plot["bodies"], colors):
     pc.set_facecolor(color)
 v_plot["cmedians"].set_color(colors)
 v_plot["cbars"].set_color(colors)
 v_plot["cmins"].set_color(colors)
 v_plot["cmaxes"].set_color(colors)
-
+for pc in v_plot["bodies"]:
+    pc.set_edgecolor("black")
+    pc.set_alpha(0.2)
 
 labels = ["EI", "PI", "UCB", "Simplex", "CCD"]
 axes[2].legend(labels=labels, loc="lower left", prop={"size": 9})
@@ -209,6 +217,6 @@ axes[2].set_xticklabels(["", "EI", "PI", "UCB", "Simplex", "CCD"])
 # titulo
 fig.suptitle(f"{n_dim} Factores", fontsize=14)
 fig.tight_layout(pad=1.1)
-# plt.show()
 
 plt.savefig(f"opt_fig_ndim_{n_dim}", dpi=300)
+plt.show()
